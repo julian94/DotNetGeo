@@ -31,7 +31,7 @@ public class TimeInterval
 
     public TimeInterval(string data)
     {
-        if (!data.Contains('/'))
+        if (data is null || !data.Contains('/'))
         {
             var time = Parse(data);
             Start = time;

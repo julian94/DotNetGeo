@@ -2,9 +2,9 @@ namespace DotNetGeo.Core;
 
 public class SearchRequest
 {
-    string collectionID;
-    string bbox;
-    TimeInterval? interval;
-    int? limit;
-    int? page;
+    public string collectionID;
+    public BoundingBox bbox;
+    public TimeInterval? interval;
+    public int? limit;
+    public int? page;
 }

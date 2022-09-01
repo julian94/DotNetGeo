@@ -1,4 +1,5 @@
 using DotNetGeo.Core;
+using System.Text.Json.Serialization;
 
 namespace DotNetGeo.Api.Structures;
 

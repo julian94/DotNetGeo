@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using DotNetGeo.Api.Constants;
+using DotNetGeo.Api.Structures;
+using DotNetGeo.Core;
 
 namespace DotNetGeo.Api.Controllers;
 
@@ -8,10 +10,52 @@ namespace DotNetGeo.Api.Controllers;
 [ApiController]
 public class FeaturesController : ControllerBase
 {
+    private DataCentral Central { get; init; }
+
+    public FeaturesController(DataCentral central)
+    {
+        Central = central;
+    }
+
     [HttpGet("/")]
     public ActionResult GetLandingPage()
     {
-        throw new NotImplementedException();
+        return new JsonResult(new LandingPage()
+        {
+            Title = "My first Geo API.",
+            Description = "An example API for example people.",
+            Links = new()
+            {
+                new()
+                {
+                    HRef = "http://data.example.org/", // Replace with the truth.
+                    Rel = "self",
+                    Type = "application/json",
+                    Title = "this document",
+                },
+                new()
+                {
+                    HRef = "http://data.example.org/api", // Replace with the truth.
+                    Rel = "service-desc",
+                    Type = "application/vnd.oai.openapi+json;version=3.0",
+                    Title = "the API definition",
+                },
+                new()
+                {
+                    HRef = "http://data.example.org/conformance", // Replace with the truth.
+                    Rel = "conformance",
+                    Type = "application/json",
+                    Title = "OGC API conformance classes implemented by this server",
+                },
+                new()
+                {
+                    HRef = "http://data.example.org/collections", // Replace with the truth.
+                    Rel = "data",
+                    Type = "application/json",
+                    Title = "Information about the feature collections",
+                },
+            }
+        });
     }
 
     [HttpGet("/api")]
@@ -54,7 +98,18 @@ public class FeaturesController : ControllerBase
         [FromQuery(Name = "datetime")] string? interval
         )
     {
-        throw new NotImplementedException();
+        var request = new SearchRequest
+        {
+            collectionID = collectionID,
+            bbox = BoundingBox.FromString(bbox),
+            limit = limit,
+            page = page,
+            interval = (interval is not null) ? new(interval) : null,
+        };
+
+        var result = Central.GetFeatures(request);
+
+        return new JsonResult(result);
     }
 
     [HttpGet("/collections/{collectionId}/items/{featureId}")]
@@ -63,6 +118,6 @@ public class FeaturesController : ControllerBase
         [FromRoute(Name = "featureId")] string featureID
         )
     {
-        throw new NotImplementedException();
+        return new JsonResult(Central.GetFeature(collectionID, featureID));
     }
 }

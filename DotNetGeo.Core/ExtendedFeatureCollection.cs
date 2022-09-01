@@ -18,7 +18,7 @@ public class ExtendedFeatureCollection
     public int? NumberReturned { get; set; }
 
     [JsonPropertyName("features")]
-    public IList<IFeature> Features { get; set; }
+    public IList<Feature> Features { get; set; }
 }
 
 /// <summary>
@@ -57,7 +57,7 @@ public class ExtendedFeatureCollectionConverter : JsonConverter<ExtendedFeatureC
             {
                 while (reader.TokenType != JsonTokenType.EndArray)
                 {
-                    fc.Features.Add(JsonSerializer.Deserialize<IFeature>(ref reader, options));
+                    fc.Features.Add(JsonSerializer.Deserialize<Feature>(ref reader, options));
 
                 }
             }
