@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using DotNetGeo.Api.Constants;
 
 namespace DotNetGeo.Api.Controllers;
 
@@ -16,12 +17,19 @@ public class FeaturesController : ControllerBase
     [HttpGet("/api")]
     public ActionResult GetApiDefinition()
     {
+        // Return the OpenAPI Specification.
         throw new NotImplementedException();
     }
+
     [HttpGet("/conformance")]
     public ActionResult GetConformance()
     {
-        throw new NotImplementedException();
+        return new JsonResult(new List<string>() 
+        {
+            Conformances.V1.Core,
+            Conformances.V1.OpenApi30,
+            Conformances.V1.GeoJson,
+        });
     }
 
     [HttpGet("/collections")]
@@ -40,9 +48,9 @@ public class FeaturesController : ControllerBase
     [HttpGet("/collections/{collectionId}/items")]
     public ActionResult GetFeatures(
         [FromRoute(Name = "collectionId")] string collectionID,
+        [FromQuery(Name = "bbox")] string bbox,
         [FromQuery(Name = "limit")] int? limit,
         [FromQuery(Name = "page")] int? page,
-        [FromQuery(Name = "bbox")] string bbox,
         [FromQuery(Name = "datetime")] string? interval
         )
     {
