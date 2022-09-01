@@ -1,13 +1,14 @@
 ﻿using DotNetGeo.Core;
 
 namespace DotNetGeo.GeoPackage;
-public class GeoPackageCollection : IGeoCollection
+
+public class GeoPackageSource : IFeatureSource
 {
     private string FilePath;
 
     public string ID { get; init; }
 
-    public GeoPackageCollection(string dbFile)
+    public GeoPackageSource(string dbFile)
     {
         FilePath = dbFile;
     }

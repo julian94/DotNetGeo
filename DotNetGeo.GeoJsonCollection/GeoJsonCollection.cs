@@ -1,8 +1,8 @@
 ﻿using DotNetGeo.Core;
 
-namespace DotNetGeo.GeoJsonCollection;
+namespace DotNetGeo.GeoJsonSource;
 
-public class GeoJsonCollection : IGeoCollection
+public class GeoJsonSource : IFeatureSource
 {
     public string ID { get; init; }
     public GeoJsonCollection(string file)
