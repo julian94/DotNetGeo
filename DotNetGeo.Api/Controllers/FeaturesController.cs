@@ -81,14 +81,22 @@ public class FeaturesController : ControllerBase
     [HttpGet("/collections")]
     public ActionResult GetCollections()
     {
-        throw new NotImplementedException();
+        var collection = Central.CollectionGroup();
+        var requestAddress = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
+        collection.PopulateLinks(requestAddress);
+
+        return new JsonResult(collection);
     }
 
     [HttpGet("/collections/{collectionId}")]
     public ActionResult GetCollection(
         [FromRoute(Name = "collectionId")] string collectionID)
     {
-        throw new NotImplementedException();
+        var collection = Central.Collection(collectionID);
+        var requestAddress = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
+        collection.PopulateLinks(requestAddress, false);
+
+        return new JsonResult(collection);
     }
 
     [HttpGet("/collections/{collectionId}/items")]
