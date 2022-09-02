@@ -97,7 +97,7 @@ public class FeaturesController : ControllerBase
         [FromQuery(Name = "bbox")] string bbox,
         [FromQuery(Name = "datetime")] string? interval,
         [FromQuery(Name = "limit")] int limit = 10,
-        [FromQuery(Name = "page")] int page = 0
+        [FromQuery(Name = "offset")] int offset = 0
         )
     {
         var request = new SearchRequest
@@ -106,10 +106,13 @@ public class FeaturesController : ControllerBase
             bbox = BoundingBox.FromString(bbox),
             interval = (interval is not null) ? new(interval) : null,
             limit = limit,
-            page = page,
+            offset = offset,
         };
 
         var result = Central.GetFeatures(request);
+
+        var requestAddress = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
+        result.PopulateLinks(requestAddress, collectionID, request);
 
         return new JsonResult(result);
     }
@@ -120,6 +123,12 @@ public class FeaturesController : ControllerBase
         [FromRoute(Name = "featureId")] string featureID
         )
     {
-        return new JsonResult(Central.GetFeature(collectionID, featureID));
+        var feature = Central.GetFeature(collectionID, featureID);
+
+
+        var requestAddress = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
+        feature.PopulateLinks(requestAddress, collectionID, false);
+
+        return new JsonResult(feature);
     }
 }

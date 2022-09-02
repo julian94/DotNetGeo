@@ -6,7 +6,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 var dataCentral = new DataCentral(new List<IFeatureSource>()
 {
-    new GeoJsonSource("./Data/Example.geo.json"),
+    //new GeoJsonSource("./Data/Example.geo.json"),
     new DummySource(),
 });
 builder.Services.AddSingleton(dataCentral);

@@ -9,7 +9,7 @@ public class GeoJsonSource : IFeatureSource
 {
     public Collection Collection { get; init; }
 
-    private IList<Feature> Features { get; init; }
+    private IList<ExtendedFeature> Features { get; init; }
 
     public GeoJsonSource(string file)
     {
@@ -75,9 +75,9 @@ public class GeoJsonSource : IFeatureSource
         return collection;
     }
 
-    public IFeature GetFeature(string id)
+    public ExtendedFeature GetFeature(string id)
     {
-        var feature = Features.Single(f => f.GetOptionalId("ID") == id);
+        var feature = Features.Single(f => f.ID == id);
         if (feature is not null)
         {
             return feature;

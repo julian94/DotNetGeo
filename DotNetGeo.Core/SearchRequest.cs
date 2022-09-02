@@ -6,12 +6,12 @@ public class SearchRequest
     public BoundingBox bbox;
     public TimeInterval? interval;
     public int limit;
-    public int page;
+    public int offset;
 
     public Range FetchRange()
     {
-        int start = page * limit;
-        int end = start + limit - 1;
+        int start = offset;
+        int end = offset + limit - 1;
         return new Range(start, end);
     }
 }

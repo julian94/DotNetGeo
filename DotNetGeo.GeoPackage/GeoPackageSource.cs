@@ -19,7 +19,7 @@ public class GeoPackageSource : IFeatureSource
         throw new NotImplementedException();
     }
 
-    public IFeature GetFeature(string id)
+    public ExtendedFeature GetFeature(string id)
     {
         throw new NotImplementedException();
     }
