@@ -1,32 +1,151 @@
 ﻿using DotNetGeo.Core;
+using Microsoft.Data.Sqlite;
 using NetTopologySuite.Features;
+using NetTopologySuite.IO;
+using SQLitePCL;
 
 namespace DotNetGeo.GeoPackage;
 
 public class GeoPackageSource : IFeatureSource
 {
-    private string FilePath;
+    private SqliteConnection Connection { get; init; }
 
     public Collection Collection { get => throw new NotImplementedException(); init => throw new NotImplementedException(); }
 
     public GeoPackageSource(string dbFile)
     {
-        FilePath = dbFile;
+        var connectionString = new SqliteConnectionStringBuilder($"Data Source={dbFile}")
+        {
+            Mode = SqliteOpenMode.ReadOnly,
+        }.ToString();
+
+        Connection = new(connectionString);
     }
 
     public ExtendedFeatureCollection GetFeatures(SearchRequest request)
     {
-        throw new NotImplementedException();
+
+        var matchCountCommandText =
+            @"SELECT COUNT(*) FROM ($table)
+            WHERE (($table).geom && ST_MakeEnvelope(($west), ($south), ($east), ($north), 4326))";
+        var matchCountCommand = new SqliteCommand(matchCountCommandText, Connection);
+        matchCountCommand.Parameters.AddWithValue("table", request.collectionID);
+        matchCountCommand.Parameters.AddWithValue("limit", request.limit);
+        matchCountCommand.Parameters.AddWithValue("offset", request.offset);
+        matchCountCommand.Parameters.AddWithValue("west", request.bbox.BottomLeft.X);
+        matchCountCommand.Parameters.AddWithValue("south", request.bbox.BottomLeft.Y);
+        matchCountCommand.Parameters.AddWithValue("east", request.bbox.TopRight.X);
+        matchCountCommand.Parameters.AddWithValue("north", request.bbox.TopRight.Y);
+
+        var matches = matchCountCommand.ExecuteReader().GetInt32(0);
+
+        var commandText =
+            @"SELECT fid, id, geom FROM ($table)
+            WHERE (($table).geom && ST_MakeEnvelope(($west), ($south), ($east), ($north), 4326))
+            LIMIT ($limit) OFFSET ($offset)";
+        var searchCommand = new SqliteCommand(commandText, Connection);
+        searchCommand.Parameters.AddWithValue("table", request.collectionID);
+        searchCommand.Parameters.AddWithValue("limit", request.limit);
+        searchCommand.Parameters.AddWithValue("offset", request.offset);
+        searchCommand.Parameters.AddWithValue("west", request.bbox.BottomLeft.X);
+        searchCommand.Parameters.AddWithValue("south", request.bbox.BottomLeft.Y);
+        searchCommand.Parameters.AddWithValue("east", request.bbox.TopRight.X);
+        searchCommand.Parameters.AddWithValue("north", request.bbox.TopRight.Y);
+        var results = searchCommand.ExecuteReader();
+
+        var geomColumn = results.GetOrdinal("geom");
+        var idColumn = results.GetOrdinal("id");
+        var fidColumn = results.GetOrdinal("fid");
+
+        var features = new List<ExtendedFeature>();
+        var geoPackageReader = new GeoPackageGeoReader();
+
+        while (results.Read())
+        {
+            var id = results.GetString(idColumn);
+            var fid = results.GetInt32(fidColumn);
+            var geometryStream = results.GetStream(geomColumn);
+
+            features.Add(new()
+            {
+                ID = id,
+                Geometry = geoPackageReader.Read(geometryStream),
+                Properties = new()
+                {
+                    { "id", id },
+                    { "fid", fid.ToString() },
+                },
+                Links = new(),
+            });
+        }
+
+        var featureCollection = new ExtendedFeatureCollection()
+        {
+            Features = features,
+            NumberMatched = matches,
+            NumberReturned = features.Count,
+            Links = new(),
+        };
+
+        return featureCollection;
     }
 
     public ExtendedFeature GetFeature(string id)
     {
-        throw new NotImplementedException();
+        var commandText = @"SELECT fid, id, geom FROM ($table) WHERE id=($id)";
+        var searchCommand = new SqliteCommand(commandText, Connection);
+        searchCommand.Parameters.AddWithValue("table", "COLLECTIONID");
+        searchCommand.Parameters.AddWithValue("id", id);
+        var results = searchCommand.ExecuteReader();
+
+        var geomColumn = results.GetOrdinal("geom");
+        var fidColumn = results.GetOrdinal("fid");
+
+        var features = new List<ExtendedFeature>();
+        var geoPackageReader = new GeoPackageGeoReader();
+
+        while (results.Read())
+        {
+            var fid = results.GetInt32(fidColumn);
+            var geometryStream = results.GetStream(geomColumn);
+
+            features.Add(new()
+            {
+                ID = id,
+                Geometry = geoPackageReader.Read(geometryStream),
+                Properties = new()
+                {
+                    { "id", id },
+                    { "fid", fid.ToString() },
+                },
+                Links = new(),
+            });
+        }
+
+        return features.First();
     }
 
-    // Get metadata about this collection
+    private void GetMetadata()
+    {
+        var commandText = @"SELECT * FROM gpkg_contents";
+        var searchCommand = new SqliteCommand(commandText, Connection);
 
-    // Get n features in bbox with p offset
+        var collections = new List<Collection>();
+        var reader = searchCommand.ExecuteReader();
 
-    // Get specific feature
+        var titleColumn = reader.GetOrdinal("table_name");
+        var srsColumn = reader.GetOrdinal("srs_id");
+
+        while (reader.Read())
+        {
+            collections.Add(new()
+            {
+                ID = reader.GetString(titleColumn),
+                Title = reader.GetString(titleColumn),
+                Extent = null,
+                Links = new(),
+            });
+        }
+
+    }
 }
