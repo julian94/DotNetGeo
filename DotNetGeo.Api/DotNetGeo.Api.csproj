@@ -20,7 +20,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DotNetGeo.Core\DotNetGeo.Core.csproj" />
-    <ProjectReference Include="..\DotNetGeo.GeoJsonCollection\DotNetGeo.GeoJsonCollection.csproj" />
+    <ProjectReference Include="..\DotNetGeo.DummySource\DotNetGeo.Mock.csproj" />
+    <ProjectReference Include="..\DotNetGeo.GeoJsonCollection\DotNetGeo.GeoJsonSource.csproj" />
     <ProjectReference Include="..\DotNetGeo.GeoPackage\DotNetGeo.GeoPackage.csproj" />
   </ItemGroup>
 

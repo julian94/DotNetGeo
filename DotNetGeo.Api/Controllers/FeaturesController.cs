@@ -20,7 +20,8 @@ public class FeaturesController : ControllerBase
     [HttpGet("/")]
     public ActionResult GetLandingPage()
     {
-        return new JsonResult(new LandingPage()
+        var requestAddress = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
+        var landingPage = new LandingPage()
         {
             Title = "My first Geo API.",
             Description = "An example API for example people.",
@@ -28,34 +29,35 @@ public class FeaturesController : ControllerBase
             {
                 new()
                 {
-                    HRef = "http://data.example.org/", // Replace with the truth.
+                    HRef = $"{requestAddress}/",
                     Rel = "self",
                     Type = "application/json",
                     Title = "this document",
                 },
                 new()
                 {
-                    HRef = "http://data.example.org/api", // Replace with the truth.
+                    HRef = $"{requestAddress}/api",
                     Rel = "service-desc",
                     Type = "application/vnd.oai.openapi+json;version=3.0",
                     Title = "the API definition",
                 },
                 new()
                 {
-                    HRef = "http://data.example.org/conformance", // Replace with the truth.
+                    HRef = $"{requestAddress}/conformance",
                     Rel = "conformance",
                     Type = "application/json",
                     Title = "OGC API conformance classes implemented by this server",
                 },
                 new()
                 {
-                    HRef = "http://data.example.org/collections", // Replace with the truth.
+                    HRef = $"{requestAddress}/collections",
                     Rel = "data",
                     Type = "application/json",
                     Title = "Information about the feature collections",
                 },
             }
-        });
+        };
+        return new JsonResult(landingPage);
     }
 
     [HttpGet("/api")]
@@ -93,18 +95,18 @@ public class FeaturesController : ControllerBase
     public ActionResult GetFeatures(
         [FromRoute(Name = "collectionId")] string collectionID,
         [FromQuery(Name = "bbox")] string bbox,
-        [FromQuery(Name = "limit")] int? limit,
-        [FromQuery(Name = "page")] int? page,
-        [FromQuery(Name = "datetime")] string? interval
+        [FromQuery(Name = "datetime")] string? interval,
+        [FromQuery(Name = "limit")] int limit = 10,
+        [FromQuery(Name = "page")] int page = 0
         )
     {
         var request = new SearchRequest
         {
             collectionID = collectionID,
             bbox = BoundingBox.FromString(bbox),
+            interval = (interval is not null) ? new(interval) : null,
             limit = limit,
             page = page,
-            interval = (interval is not null) ? new(interval) : null,
         };
 
         var result = Central.GetFeatures(request);

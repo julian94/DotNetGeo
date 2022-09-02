@@ -1,10 +1,13 @@
 using DotNetGeo.Core;
+using DotNetGeo.GeoJsonSource;
+using DotNetGeo.Mock;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var dataCentral = new DataCentral(new List<IFeatureSource>()
 {
-    new DotNetGeo.GeoJsonSource.GeoJsonSource("./Data/Example.geo.json"),
+    new GeoJsonSource("./Data/Example.geo.json"),
+    new DummySource(),
 });
 builder.Services.AddSingleton(dataCentral);
 

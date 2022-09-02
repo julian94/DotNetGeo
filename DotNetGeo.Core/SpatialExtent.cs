@@ -30,12 +30,17 @@ public class BoundingBox
     public List<Coordinate> ToFourPosition()
     {
         return new List<Coordinate>
+        {
+            BottomLeft,
+            TopRight,
+            new Coordinate(TopRight.X, BottomLeft.Y),
+            new Coordinate(BottomLeft.X, TopRight.Y),
+        };
+    }
+
+    public Envelope AsEnvelope()
     {
-        BottomLeft,
-        TopRight,
-        new Coordinate(TopRight.X, BottomLeft.Y),
-        new Coordinate(BottomLeft.X, TopRight.Y),
-    };
+        return new(BottomLeft, TopRight);
     }
 
     public static BoundingBox FromString(string data)

@@ -10,7 +10,7 @@ public class DataCentral
         Sources = new Dictionary<string, IFeatureSource>();
         foreach (var source in sources)
         {
-            Sources[source.ID] = source;
+            Sources[source.Collection.ID] = source;
         }
     }
 

@@ -7,23 +7,22 @@ namespace DotNetGeo.GeoJsonSource;
 
 public class GeoJsonSource : IFeatureSource
 {
-    public string ID { get; init; }
-    public string Title { get; init; }
-    public string Description { get; init; }
-    public Extent Extent { get; init; }
+    public Collection Collection { get; init; }
 
     private IList<Feature> Features { get; init; }
 
     public GeoJsonSource(string file)
     {
-        ID = "Example.geo.json";
-        Title = "Title";
-        Description = "Description";
-        Extent = new()
+        Collection = new()
         {
-            Spatial = new()
+            ID = "Example.geo.json",
+            Title = "Title",
+            Description = "Description",
+            Extent = new()
             {
-                BoundingBox = new()
+                Spatial = new()
+                {
+                    BoundingBox = new()
                 {
                     new()
                     {
@@ -39,16 +38,17 @@ public class GeoJsonSource : IFeatureSource
                         }
                     }
                 }
-            },
-            Temporal = new()
-            {
-                Interval = new()
+                },
+                Temporal = new()
+                {
+                    Interval = new()
                 {
                     new()
                     {
                         Interval = new("2022-09-01T00:00:00Z"),
                         TemporalReferenceSystem = "http://www.opengis.net/def/uom/ISO-8601/0/Gregorian",
                     }
+                }
                 }
             }
         };

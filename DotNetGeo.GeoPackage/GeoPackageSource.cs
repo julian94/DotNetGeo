@@ -7,10 +7,7 @@ public class GeoPackageSource : IFeatureSource
 {
     private string FilePath;
 
-    public string ID { get; init; }
-    public string Title { get => throw new NotImplementedException(); init => throw new NotImplementedException(); }
-    public string Description { get => throw new NotImplementedException(); init => throw new NotImplementedException(); }
-    public Extent Extent { get => throw new NotImplementedException(); init => throw new NotImplementedException(); }
+    public Collection Collection { get => throw new NotImplementedException(); init => throw new NotImplementedException(); }
 
     public GeoPackageSource(string dbFile)
     {
