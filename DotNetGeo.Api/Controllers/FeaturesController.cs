@@ -63,8 +63,7 @@ public class FeaturesController : ControllerBase
     [HttpGet("/api")]
     public ActionResult GetApiDefinition()
     {
-        // Return the OpenAPI Specification.
-        throw new NotImplementedException();
+        return Redirect("/swagger/Features/swagger.json");
     }
 
     [HttpGet("/conformance")]
