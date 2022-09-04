@@ -1,5 +1,6 @@
 using DotNetGeo.Core;
 using DotNetGeo.GeoJsonSource;
+using DotNetGeo.GeoPackage;
 using DotNetGeo.Mock;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,7 @@ var dataCentral = new DataCentral(new List<IFeatureSource>()
 {
     //new GeoJsonSource("./Data/Example.geo.json"),
     new DummySource(),
+    new GeoPackageSource(@"C:\Users\Julian\Downloads\opmplc_gpkg_gb\data\opmplc_gb.gpkg"),
 });
 builder.Services.AddSingleton(dataCentral);
 

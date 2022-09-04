@@ -10,7 +10,7 @@ public class GeoPackageSource : IFeatureSource
 {
     private SqliteConnection Connection { get; init; }
 
-    public Collection Collection { get => throw new NotImplementedException(); init => throw new NotImplementedException(); }
+    public Collection Collection { get; init; }
 
     public GeoPackageSource(string dbFile)
     {
@@ -133,19 +133,40 @@ public class GeoPackageSource : IFeatureSource
         var collections = new List<Collection>();
         var reader = searchCommand.ExecuteReader();
 
+        var dataTypeColumn = reader.GetOrdinal("data_type");
         var titleColumn = reader.GetOrdinal("table_name");
+
+        var minXColumn = reader.GetOrdinal("min_x");
+        var minYColumn = reader.GetOrdinal("min_y");
+        var maxXColumn = reader.GetOrdinal("max_x");
+        var maxYColumn = reader.GetOrdinal("max_y");
         var srsColumn = reader.GetOrdinal("srs_id");
 
         while (reader.Read())
         {
+            var dataType = reader.GetString(dataTypeColumn);
+            if (!dataType.Equals("features")) continue;
+
+            var id = reader.GetString(titleColumn);
+            var title = id;
+            var description = reader.GetString(titleColumn);
+
+            // Note might not be in WGS84
+            var minX = reader.GetString(minXColumn);
+            var minY = reader.GetString(minYColumn);
+            var maxX = reader.GetString(maxXColumn);
+            var maxY = reader.GetString(maxYColumn);
+            var srs = reader.GetString(srsColumn);
+
             collections.Add(new()
             {
-                ID = reader.GetString(titleColumn),
-                Title = reader.GetString(titleColumn),
+                ID = id,
+                Title = title,
+                Description = description,
                 Extent = null,
                 Links = new(),
+                crs = new(),
             });
         }
-
     }
 }
