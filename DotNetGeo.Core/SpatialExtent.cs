@@ -43,6 +43,11 @@ public class BoundingBox
         return new(BottomLeft, TopRight);
     }
 
+    public Polygon AsPolygon()
+    {
+        return new(new LinearRing(new Coordinate[2] { BottomLeft, TopRight }));
+    }
+
     public static BoundingBox FromString(string data)
     {
         var values = new List<double>();
