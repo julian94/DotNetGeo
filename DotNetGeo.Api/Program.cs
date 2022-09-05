@@ -5,12 +5,16 @@ using DotNetGeo.Mock;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var dataCentral = new DataCentral(new List<IFeatureSource>()
+var featureSources = new List<IFeatureSource>()
 {
     //new GeoJsonSource("./Data/Example.geo.json"),
     new DummySource(),
-    new GeoPackageSource(@"C:\Users\Julian\Downloads\opmplc_gpkg_gb\data\opmplc_gb.gpkg"),
-});
+};
+featureSources.AddRange(
+    GeoPackageProvider.GetSourcesFromDB(
+        @"C:\Users\Julian\Downloads\opmplc_gpkg_gb\data\opmplc_gb.gpkg"));
+
+var dataCentral = new DataCentral(featureSources);
 builder.Services.AddSingleton(dataCentral);
 
 builder.Services.AddControllers().AddJsonOptions(options => {

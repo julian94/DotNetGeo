@@ -43,6 +43,15 @@ public class BoundingBox
         return new(BottomLeft, TopRight);
     }
 
+    public static BoundingBox FromEnvelope(Envelope envelope)
+    {
+        return new()
+        {
+            BottomLeft  = new(envelope.MinX, envelope.MinY),
+            TopRight    = new(envelope.MaxX, envelope.MaxY),
+        };
+    }
+
     public Polygon AsPolygon()
     {
         return new(new LinearRing(new Coordinate[2] { BottomLeft, TopRight }));

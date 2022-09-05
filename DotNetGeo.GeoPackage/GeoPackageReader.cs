@@ -13,7 +13,7 @@ using SQLitePCL;
 
 namespace DotNetGeo.GeoPackage;
 
-internal class GeoPackageReader
+internal class GeoPackageReader : IDisposable
 {
     private SqliteConnection Connection { get; init; }
 
@@ -25,6 +25,10 @@ internal class GeoPackageReader
         }.ToString();
 
         Connection = new(connectionString);
+        Connection.Open();
+        Connection.EnableExtensions(true);
+        Connection.LoadExtension("./mod_spatialite.dll");
+        Connection.EnableExtensions(false);
     }
 
     /* Things we need:
@@ -33,6 +37,8 @@ internal class GeoPackageReader
      * Get table of tables (gpkg_contents) 
      * Get N matching features from feature table X in SRS Y
      * Get specific feature from table X in SRS Y
+     * 
+     * Make all of this ASYNC as it's IO.
      * 
      */
 
@@ -164,11 +170,13 @@ internal class GeoPackageReader
             "FROM gpkg_contents WHERE table_name=($table)";
 
         var bboxCommand = new SqliteCommand(bboxCommandText, Connection);
-        bboxCommand.Parameters.AddWithValue("originSRS", srs);
-        bboxCommand.Parameters.AddWithValue("destinationSRSnumber", "4326");
-        bboxCommand.Parameters.AddWithValue("destinationSRS", "EPSG:4326");
+        bboxCommand.Parameters.AddWithValue("$originSRS", srs);
+        bboxCommand.Parameters.AddWithValue("$destinationSRSnumber", "4326");
+        bboxCommand.Parameters.AddWithValue("$destinationSRS", "EPSG:4326");
+        bboxCommand.Parameters.AddWithValue("$table", table);
 
         var reader = bboxCommand.ExecuteReader();
+        reader.Read();
         var bboxStream = reader.GetStream(0);
 
         var geoPackageReader = new GeoPackageGeoReader();
@@ -184,6 +192,7 @@ internal class GeoPackageReader
         srsCommand.Parameters.AddWithValue("table", table);
 
         var srsReader = srsCommand.ExecuteReader();
+        srsReader.Read();
         var srsColumn = srsReader.GetOrdinal("srs_id");
         var srsNumber = srsReader.GetString(srsColumn);
 
@@ -193,10 +202,64 @@ internal class GeoPackageReader
         orgCommand.Parameters.AddWithValue("srs", srsNumber);
 
         var orgReader = orgCommand.ExecuteReader();
+        orgReader.Read();
         var orgColumn = orgReader.GetOrdinal("organization");
         var orgName = orgReader.GetString(orgColumn);
 
 
         return $"{orgName}:{srsNumber}";
+    }
+
+    internal IList<Collection> GetCollectionsFromMetadata()
+    {
+
+        var commandText = "SELECT * FROM gpkg_contents";
+        var command = new SqliteCommand(commandText, Connection);
+
+        var reader = command.ExecuteReader();
+
+        var tableNameColumn = reader.GetOrdinal("table_name");
+        var dataTypeColumn = reader.GetOrdinal("data_type");
+        var descriptionColumn = reader.GetOrdinal("description");
+
+        var list = new List<Collection>();
+        while (reader.Read())
+        {
+            if (!reader.GetString(dataTypeColumn).Equals("features")) continue;
+            
+            list.Add(new()
+            {
+                ID = reader.GetString(tableNameColumn),
+                Title = reader.GetString(tableNameColumn),
+                Description = reader.GetString(descriptionColumn),
+                crs = new(),
+                Extent = null,
+                Links = new(),
+            });
+        }
+
+        foreach(var collection in list)
+        {
+            collection.crs.Add("EPSG:4326 but fancy");
+            collection.crs.Add("Whichever format it's originally in.");
+            collection.Extent = new()
+            {
+                Spatial = new()
+                {
+                    BoundingBox = new()
+                    {
+                        BoundingBox.FromEnvelope(GetBoundingBox(collection.ID).EnvelopeInternal),
+                    },
+                },
+                Temporal = null,
+            };
+        }
+
+        return list;
+    }
+
+    public void Dispose()
+    {
+        Connection?.Dispose();
     }
 }
