@@ -54,7 +54,14 @@ public class BoundingBox
 
     public Polygon AsPolygon()
     {
-        return new(new LinearRing(new Coordinate[2] { BottomLeft, TopRight }));
+        return new(new LinearRing(new Coordinate[5]
+        {
+            BottomLeft,
+            new Coordinate(BottomLeft.X, TopRight.Y),
+            TopRight,
+            new Coordinate(TopRight.X, BottomLeft.Y),
+            BottomLeft,
+        }));
     }
 
     public static BoundingBox FromString(string data)

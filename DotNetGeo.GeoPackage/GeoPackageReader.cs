@@ -53,14 +53,15 @@ internal class GeoPackageReader : IDisposable
             "WHERE (($table).geom && " +
             "Transform(Extent(GeomFromGPB(($boundingBox))), ($destinationSRSnumber), NULL, ($originSRS), ($destinationSRS)))";
         var matchCountCommand = new SqliteCommand(matchCountCommandText, Connection);
-        matchCountCommand.Parameters.AddWithValue("table", request.collectionID);
-        matchCountCommand.Parameters.AddWithValue("bbox", bboxBytes);
-        matchCountCommand.Parameters.AddWithValue("originSRS", "EPSG:4326");
-        matchCountCommand.Parameters.AddWithValue("destinationSRSnumber", GetSRS(request.collectionID).Split(":")[1]);
-        matchCountCommand.Parameters.AddWithValue("destinationSRS", GetSRS(request.collectionID));
+        matchCountCommand.Parameters.AddWithValue("$table", request.collectionID);
+        matchCountCommand.Parameters.AddWithValue("$bbox", bboxBytes);
+        matchCountCommand.Parameters.AddWithValue("$originSRS", "EPSG:4326");
+        matchCountCommand.Parameters.AddWithValue("$destinationSRSnumber", int.Parse(GetSRS(request.collectionID).Split(":")[1]));
+        matchCountCommand.Parameters.AddWithValue("$destinationSRS", GetSRS(request.collectionID));
 
-
-        var matches = matchCountCommand.ExecuteReader().GetInt32(0);
+        var matchCountReader = matchCountCommand.ExecuteReader();
+        matchCountReader.Read();
+        var matches = matchCountReader.GetInt32(0);
 
         var commandText =
             "SELECT COUNT(*) FROM ($table)" +
@@ -68,13 +69,13 @@ internal class GeoPackageReader : IDisposable
             "Transform(Extent(GeomFromGPB(($boundingBox))), ($destinationSRSnumber), NULL, ($originSRS), ($destinationSRS)))" +
             "LIMIT ($limit) OFFSET ($offset)";
         var searchCommand = new SqliteCommand(commandText, Connection);
-        searchCommand.Parameters.AddWithValue("table", request.collectionID);
-        searchCommand.Parameters.AddWithValue("bbox", bboxBytes);
-        searchCommand.Parameters.AddWithValue("originSRS", "EPSG:4326");
-        searchCommand.Parameters.AddWithValue("destinationSRSnumber", GetSRS(request.collectionID).Split(":")[1]);
-        searchCommand.Parameters.AddWithValue("destinationSRS", GetSRS(request.collectionID));
-        searchCommand.Parameters.AddWithValue("limit", request.limit);
-        searchCommand.Parameters.AddWithValue("offset", request.offset);
+        searchCommand.Parameters.AddWithValue("$table", request.collectionID);
+        searchCommand.Parameters.AddWithValue("$bbox", bboxBytes);
+        searchCommand.Parameters.AddWithValue("$originSRS", "EPSG:4326");
+        searchCommand.Parameters.AddWithValue("$destinationSRSnumber", int.Parse(GetSRS(request.collectionID).Split(":")[1]));
+        searchCommand.Parameters.AddWithValue("$destinationSRS", GetSRS(request.collectionID));
+        searchCommand.Parameters.AddWithValue("$limit", request.limit);
+        searchCommand.Parameters.AddWithValue("$offset", request.offset);
         var results = searchCommand.ExecuteReader();
 
 
@@ -94,23 +95,24 @@ internal class GeoPackageReader : IDisposable
     public ExtendedFeature GetFeature(string table, string id, string spatialReferenceSystem)
     {
         var originSRS = GetSRS(table);
+        var geopackageWriter = new GeoPackageGeoWriter();
+        var bboxBytes = geopackageWriter.Write(GetBoundingBox(table));
+
 
         var commandText =
             "SELECT AsGPB(Transform(" + 
-            "GeomFromGPB(geom), ($destinationSRSnumber), GeomFromGPB(($boundingBox)), ($originSRS), ($destinationSRS))" +
+            "GeomFromGPB(geom), ($destinationSRSnumber), GeomFromGPB(($boundingBox)), ($originSRS), ($destinationSRS)) " +
             "FROM ($table) WHERE id=($id)";
         var searchCommand = new SqliteCommand(commandText, Connection);
-        searchCommand.Parameters.AddWithValue("table", table);
-        searchCommand.Parameters.AddWithValue("id", id);
+        searchCommand.Parameters.AddWithValue("$table", table);
+        searchCommand.Parameters.AddWithValue("$id", id);
 
         // The bounding box of the table, this makes the conversion more accurate.
-        var geopackageWriter = new GeoPackageGeoWriter();
-        var bboxBytes = geopackageWriter.Write(GetBoundingBox(table));
-        searchCommand.Parameters.AddWithValue("boundingBox", bboxBytes);
+        searchCommand.Parameters.AddWithValue("$boundingBox", bboxBytes);
 
-        searchCommand.Parameters.AddWithValue("originSRS", originSRS);
-        searchCommand.Parameters.AddWithValue("destinationSRSnumber", spatialReferenceSystem.Split(":")[1]);
-        searchCommand.Parameters.AddWithValue("destinationSRS", spatialReferenceSystem);
+        searchCommand.Parameters.AddWithValue("$originSRS", originSRS);
+        searchCommand.Parameters.AddWithValue("$destinationSRSnumber", int.Parse(spatialReferenceSystem.Split(":")[1]));
+        searchCommand.Parameters.AddWithValue("$destinationSRS", spatialReferenceSystem);
 
         var reader = searchCommand.ExecuteReader();
 
@@ -171,7 +173,7 @@ internal class GeoPackageReader : IDisposable
 
         var bboxCommand = new SqliteCommand(bboxCommandText, Connection);
         bboxCommand.Parameters.AddWithValue("$originSRS", srs);
-        bboxCommand.Parameters.AddWithValue("$destinationSRSnumber", "4326");
+        bboxCommand.Parameters.AddWithValue("$destinationSRSnumber", 4326);
         bboxCommand.Parameters.AddWithValue("$destinationSRS", "EPSG:4326");
         bboxCommand.Parameters.AddWithValue("$table", table);
 
@@ -189,7 +191,7 @@ internal class GeoPackageReader : IDisposable
     {
         var srsCommandText = "SELECT srs_id FROM gpkg_contents WHERE table_name=($table)";
         var srsCommand = new SqliteCommand(srsCommandText, Connection);
-        srsCommand.Parameters.AddWithValue("table", table);
+        srsCommand.Parameters.AddWithValue("$table", table);
 
         var srsReader = srsCommand.ExecuteReader();
         srsReader.Read();
@@ -199,7 +201,7 @@ internal class GeoPackageReader : IDisposable
 
         var orgCommandText = "SELECT organization FROM gpkg_spatial_ref_sys WHERE srs_id=($srs)";
         var orgCommand = new SqliteCommand(orgCommandText, Connection);
-        orgCommand.Parameters.AddWithValue("srs", srsNumber);
+        orgCommand.Parameters.AddWithValue("$srs", srsNumber);
 
         var orgReader = orgCommand.ExecuteReader();
         orgReader.Read();
