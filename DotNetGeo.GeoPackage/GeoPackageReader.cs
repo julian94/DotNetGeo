@@ -49,8 +49,8 @@ internal class GeoPackageReader : IDisposable
         var bboxBytes = geopackageWriter.Write(bbox);
 
         var matchCountCommandText =
-            "SELECT COUNT(*) FROM ($table)" +
-            "WHERE (($table).geom && " +
+            $"SELECT COUNT(*) FROM {request.collectionID} " +
+            $"WHERE (geom && " +
             "Transform(Extent(GeomFromGPB(($boundingBox))), ($destinationSRSnumber), NULL, ($originSRS), ($destinationSRS)))";
         var matchCountCommand = new SqliteCommand(matchCountCommandText, Connection);
         matchCountCommand.Parameters.AddWithValue("$table", request.collectionID);
@@ -64,12 +64,12 @@ internal class GeoPackageReader : IDisposable
         var matches = matchCountReader.GetInt32(0);
 
         var commandText =
-            "SELECT COUNT(*) FROM ($table)" +
+            $"SELECT * FROM {request.collectionID}" +
             "WHERE (($table).geom && " +
             "Transform(Extent(GeomFromGPB(($boundingBox))), ($destinationSRSnumber), NULL, ($originSRS), ($destinationSRS)))" +
             "LIMIT ($limit) OFFSET ($offset)";
         var searchCommand = new SqliteCommand(commandText, Connection);
-        searchCommand.Parameters.AddWithValue("$table", request.collectionID);
+        //searchCommand.Parameters.AddWithValue("$table", request.collectionID);
         searchCommand.Parameters.AddWithValue("$bbox", bboxBytes);
         searchCommand.Parameters.AddWithValue("$originSRS", "EPSG:4326");
         searchCommand.Parameters.AddWithValue("$destinationSRSnumber", int.Parse(GetSRS(request.collectionID).Split(":")[1]));
