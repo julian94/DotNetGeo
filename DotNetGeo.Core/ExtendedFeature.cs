@@ -5,8 +5,9 @@ namespace DotNetGeo.Core;
 
 public class ExtendedFeature
 {
+    // TODO: Make it so that this is ALWAYS serialized as Feature!
     [JsonPropertyName("type")]
-    public const string Type = "Feature";
+    public string Type { get; set; }
 
     [JsonPropertyName("ID")]
     public string ID { get; set; }

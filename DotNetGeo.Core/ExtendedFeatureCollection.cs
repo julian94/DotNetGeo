@@ -5,8 +5,9 @@ namespace DotNetGeo.Core;
 
 public class ExtendedFeatureCollection
 {
+    // TODO: Make it so that this is ALWAYS serialized as FeatureCollection!
     [JsonPropertyName("type")]
-    public const string Type = "FeatureCollection";
+    public string Type { get; set; }
 
     [JsonPropertyName("links")]
     public List<Link> Links { get; set; }

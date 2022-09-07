@@ -48,15 +48,13 @@ internal class GeoPackageReader : IDisposable
         var geopackageWriter = new GeoPackageGeoWriter();
         var bboxBytes = geopackageWriter.Write(bbox);
 
+        var filterText = $"FROM {request.collectionID} WHERE Intersects(geom, ST_GeomFromText(($linestringtext)))";
 
         // ST_GeomFromText('LINESTRING(minx miny, maxx miny, maxx maxy, minx maxy, minx miny)')
-        var matchCountCommandText =
-            $"SELECT COUNT(*) FROM {request.collectionID} " +
-            "WHERE Intersects(geom, " +
-            "Transform(Extent(GeomFromGPB(($boundingBox))), ($destinationSRSnumber), NULL, ($originSRS), ($destinationSRS)))";
+        var matchCountCommandText = "SELECT COUNT(*)  " + filterText;
         var matchCountCommand = new SqliteCommand(matchCountCommandText, Connection);
         matchCountCommand.Parameters.AddWithValue("$table", request.collectionID);
-        matchCountCommand.Parameters.AddWithValue("$bbox", bboxBytes);
+        matchCountCommand.Parameters.AddWithValue("$linestringtext", $"LINESTRING({request.bbox.BottomLeft.X} {request.bbox.BottomLeft.Y}, {request.bbox.TopRight.X} {request.bbox.BottomLeft.Y}, {request.bbox.TopRight.X} {request.bbox.TopRight.Y}, {request.bbox.BottomLeft.X} {request.bbox.TopRight.Y}, {request.bbox.BottomLeft.X} {request.bbox.BottomLeft.Y})");
         matchCountCommand.Parameters.AddWithValue("$originSRS", "EPSG:4326");
         matchCountCommand.Parameters.AddWithValue("$destinationSRSnumber", int.Parse(GetSRS(request.collectionID).Split(":")[1]));
         matchCountCommand.Parameters.AddWithValue("$destinationSRS", GetSRS(request.collectionID));
@@ -65,17 +63,13 @@ internal class GeoPackageReader : IDisposable
         matchCountReader.Read();
         var matches = matchCountReader.GetInt32(0);
 
-        var commandText =
-            $"SELECT * FROM {request.collectionID}" +
-            "WHERE (($table).geom && " +
-            "Transform(Extent(GeomFromGPB(($boundingBox))), ($destinationSRSnumber), NULL, ($originSRS), ($destinationSRS)))" +
-            "LIMIT ($limit) OFFSET ($offset)";
+        var commandText = "SELECT AsGPB(Transform(GeomFromGPB(geom), ($destinationSRSnumber), ST_GeomFromText(($linestringtext)), ($originSRS), ($destinationSRS))), * " + filterText + "LIMIT ($limit) OFFSET ($offset)";
         var searchCommand = new SqliteCommand(commandText, Connection);
         //searchCommand.Parameters.AddWithValue("$table", request.collectionID);
-        searchCommand.Parameters.AddWithValue("$bbox", bboxBytes);
-        searchCommand.Parameters.AddWithValue("$originSRS", "EPSG:4326");
-        searchCommand.Parameters.AddWithValue("$destinationSRSnumber", int.Parse(GetSRS(request.collectionID).Split(":")[1]));
-        searchCommand.Parameters.AddWithValue("$destinationSRS", GetSRS(request.collectionID));
+        searchCommand.Parameters.AddWithValue("$linestringtext", $"LINESTRING({request.bbox.BottomLeft.X} {request.bbox.BottomLeft.Y}, {request.bbox.TopRight.X} {request.bbox.BottomLeft.Y}, {request.bbox.TopRight.X} {request.bbox.TopRight.Y}, {request.bbox.BottomLeft.X} {request.bbox.TopRight.Y}, {request.bbox.BottomLeft.X} {request.bbox.BottomLeft.Y})");
+        searchCommand.Parameters.AddWithValue("$originSRS", GetSRS(request.collectionID));
+        searchCommand.Parameters.AddWithValue("$destinationSRSnumber", 4326);
+        searchCommand.Parameters.AddWithValue("$destinationSRS", "EPSG:4326");
         searchCommand.Parameters.AddWithValue("$limit", request.limit);
         searchCommand.Parameters.AddWithValue("$offset", request.offset);
         var results = searchCommand.ExecuteReader();
@@ -85,6 +79,7 @@ internal class GeoPackageReader : IDisposable
 
         var featureCollection = new ExtendedFeatureCollection()
         {
+            Type = "FeatureCollection",
             Features = features,
             NumberMatched = matches,
             NumberReturned = features.Count,
@@ -102,9 +97,8 @@ internal class GeoPackageReader : IDisposable
 
 
         var commandText =
-            "SELECT AsGPB(Transform(" + 
-            "GeomFromGPB(geom), ($destinationSRSnumber), GeomFromGPB(($boundingBox)), ($originSRS), ($destinationSRS)) " +
-            "FROM ($table) WHERE id=($id)";
+            "SELECT AsGPB(Transform(GeomFromGPB(geom), ($destinationSRSnumber), GeomFromGPB(($boundingBox)), ($originSRS), ($destinationSRS))), * " +
+            $"FROM {table} WHERE id=($id)";
         var searchCommand = new SqliteCommand(commandText, Connection);
         searchCommand.Parameters.AddWithValue("$table", table);
         searchCommand.Parameters.AddWithValue("$id", id);
@@ -118,10 +112,6 @@ internal class GeoPackageReader : IDisposable
 
         var reader = searchCommand.ExecuteReader();
 
-        var columns = reader.FieldCount;
-
-        var geomColumn = reader.GetOrdinal("geom");
-
         var features = GetFeatures(reader);
 
         return features.First();
@@ -131,7 +121,7 @@ internal class GeoPackageReader : IDisposable
     {
         var columns = reader.FieldCount;
 
-        var geomColumn = reader.GetOrdinal("geom");
+        var geomColumn = 0;//reader.GetOrdinal("geom");
 
         var features = new List<ExtendedFeature>();
         var geoPackageReader = new GeoPackageGeoReader();
@@ -153,6 +143,7 @@ internal class GeoPackageReader : IDisposable
 
             features.Add(new()
             {
+                Type = "Feature",
                 ID = (string)properties["id"],
                 Geometry = geoPackageReader.Read(geometryStream),
                 Properties = properties,
