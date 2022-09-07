@@ -44,6 +44,12 @@ app.UseSwaggerUI(c =>
     c.SwaggerEndpoint("/swagger/Features/swagger.json", "OGC Features API");
 });
 app.UseHttpsRedirection();
+app.UseCors(policy =>
+{
+    policy.AllowAnyHeader();
+    policy.AllowAnyMethod();
+    policy.AllowAnyOrigin();
+});
 app.UseAuthorization();
 app.MapControllers();
 
