@@ -9,11 +9,11 @@ namespace DotNetGeo.GeoPackage;
 
 public class GeoPackageProvider
 {
-    public static IList<IFeatureSource> GetSourcesFromDB(string dbFile)
+    public static async Task<IList<IFeatureSource>> GetSourcesFromDB(string dbFile)
     {
-        var reader = new GeoPackageReader(dbFile);
+        var reader = await GeoPackageReader.MakeReader(dbFile);
 
-        var collections = reader.GetCollectionsFromMetadata();
+        var collections = await reader.GetCollectionsFromMetadata();
 
         var sources = new List<IFeatureSource>();
 

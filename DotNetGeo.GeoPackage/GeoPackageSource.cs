@@ -18,13 +18,13 @@ public class GeoPackageSource : IFeatureSource
         Reader = reader;
     }
 
-    public ExtendedFeatureCollection GetFeatures(SearchRequest request)
+    public async Task<ExtendedFeatureCollection> GetFeatures(SearchRequest request)
     {
-        return Reader.GetFeatures(request);
+        return await Reader.GetFeatures(request);
     }
 
-    public ExtendedFeature GetFeature(string id)
+    public async Task<ExtendedFeature> GetFeature(string id)
     {
-        return Reader.GetFeature(Collection.Title, id, "EPSG:4326");
+        return await Reader.GetFeature(Collection.Title, id, "EPSG:4326");
     }
 }

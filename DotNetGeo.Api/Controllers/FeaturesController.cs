@@ -99,7 +99,7 @@ public class FeaturesController : ControllerBase
     }
 
     [HttpGet("/collections/{collectionId}/items")]
-    public ActionResult GetFeatures(
+    public async Task<ActionResult> GetFeatures(
         [FromRoute(Name = "collectionId")] string collectionID,
         [FromQuery(Name = "bbox")] string bbox,
         [FromQuery(Name = "datetime")] string? interval,
@@ -116,7 +116,7 @@ public class FeaturesController : ControllerBase
             offset = offset,
         };
 
-        var result = Central.GetFeatures(request);
+        var result = await Central.GetFeatures(request);
 
         var requestAddress = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";
         result.PopulateLinks(requestAddress, collectionID, request);
@@ -125,12 +125,12 @@ public class FeaturesController : ControllerBase
     }
 
     [HttpGet("/collections/{collectionId}/items/{featureId}")]
-    public ActionResult GetFeature(
+    public async Task<ActionResult> GetFeature(
         [FromRoute(Name = "collectionId")] string collectionID,
         [FromRoute(Name = "featureId")] string featureID
         )
     {
-        var feature = Central.GetFeature(collectionID, featureID);
+        var feature = await Central.GetFeature(collectionID, featureID);
 
 
         var requestAddress = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host}";

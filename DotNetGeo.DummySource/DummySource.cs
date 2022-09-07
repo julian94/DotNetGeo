@@ -105,14 +105,14 @@ public class DummySource : IFeatureSource
 
     }
 
-    public ExtendedFeature GetFeature(string id)
+    public async Task<ExtendedFeature> GetFeature(string id)
     {
         var feature = Features.First(f => f.ID.ToString() == id);
 
         return feature;
     }
 
-    public ExtendedFeatureCollection GetFeatures(SearchRequest request)
+    public async Task<ExtendedFeatureCollection> GetFeatures(SearchRequest request)
     {
         var features = Features.Where(f => request.bbox.AsEnvelope().Intersects(f.BoundingBox.AsEnvelope()));
 

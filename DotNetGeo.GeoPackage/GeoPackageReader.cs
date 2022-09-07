@@ -17,18 +17,25 @@ internal class GeoPackageReader : IDisposable
 {
     private SqliteConnection Connection { get; init; }
 
-    public GeoPackageReader(string dbFile)
+    private GeoPackageReader(SqliteConnection connection)
+    {
+        Connection = connection;
+    }
+
+    public static async Task<GeoPackageReader> MakeReader(string dbFile)
     {
         var connectionString = new SqliteConnectionStringBuilder($"Data Source={dbFile}")
         {
             Mode = SqliteOpenMode.ReadOnly,
         }.ToString();
 
-        Connection = new(connectionString);
-        Connection.Open();
-        Connection.EnableExtensions(true);
-        Connection.LoadExtension("./mod_spatialite.dll");
-        Connection.EnableExtensions(false);
+        var connection = new SqliteConnection(connectionString);
+        await connection.OpenAsync();
+        connection.EnableExtensions(true);
+        connection.LoadExtension("./mod_spatialite.dll");
+        connection.EnableExtensions(false);
+
+        return new GeoPackageReader(connection);
     }
 
     /* Things we need:
@@ -42,7 +49,7 @@ internal class GeoPackageReader : IDisposable
      * 
      */
 
-    public ExtendedFeatureCollection GetFeatures(SearchRequest request)
+    public async Task<ExtendedFeatureCollection> GetFeatures(SearchRequest request)
     {
         var bbox = request.bbox.AsPolygon();
         var geopackageWriter = new GeoPackageGeoWriter();
@@ -56,8 +63,8 @@ internal class GeoPackageReader : IDisposable
         matchCountCommand.Parameters.AddWithValue("$table", request.collectionID);
         matchCountCommand.Parameters.AddWithValue("$linestringtext", $"LINESTRING({request.bbox.BottomLeft.X} {request.bbox.BottomLeft.Y}, {request.bbox.TopRight.X} {request.bbox.BottomLeft.Y}, {request.bbox.TopRight.X} {request.bbox.TopRight.Y}, {request.bbox.BottomLeft.X} {request.bbox.TopRight.Y}, {request.bbox.BottomLeft.X} {request.bbox.BottomLeft.Y})");
         matchCountCommand.Parameters.AddWithValue("$originSRS", "EPSG:4326");
-        matchCountCommand.Parameters.AddWithValue("$destinationSRSnumber", int.Parse(GetSRS(request.collectionID).Split(":")[1]));
-        matchCountCommand.Parameters.AddWithValue("$destinationSRS", GetSRS(request.collectionID));
+        matchCountCommand.Parameters.AddWithValue("$destinationSRSnumber", int.Parse((await GetSRS(request.collectionID)).Split(":")[1]));
+        matchCountCommand.Parameters.AddWithValue("$destinationSRS", await GetSRS(request.collectionID));
 
         var matchCountReader = matchCountCommand.ExecuteReader();
         matchCountReader.Read();
@@ -67,7 +74,7 @@ internal class GeoPackageReader : IDisposable
         var searchCommand = new SqliteCommand(commandText, Connection);
         //searchCommand.Parameters.AddWithValue("$table", request.collectionID);
         searchCommand.Parameters.AddWithValue("$linestringtext", $"LINESTRING({request.bbox.BottomLeft.X} {request.bbox.BottomLeft.Y}, {request.bbox.TopRight.X} {request.bbox.BottomLeft.Y}, {request.bbox.TopRight.X} {request.bbox.TopRight.Y}, {request.bbox.BottomLeft.X} {request.bbox.TopRight.Y}, {request.bbox.BottomLeft.X} {request.bbox.BottomLeft.Y})");
-        searchCommand.Parameters.AddWithValue("$originSRS", GetSRS(request.collectionID));
+        searchCommand.Parameters.AddWithValue("$originSRS", await GetSRS(request.collectionID));
         searchCommand.Parameters.AddWithValue("$destinationSRSnumber", 4326);
         searchCommand.Parameters.AddWithValue("$destinationSRS", "EPSG:4326");
         searchCommand.Parameters.AddWithValue("$limit", request.limit);
@@ -75,7 +82,7 @@ internal class GeoPackageReader : IDisposable
         var results = searchCommand.ExecuteReader();
 
 
-        var features = GetFeatures(results);
+        var features = await GetFeatures(results);
 
         var featureCollection = new ExtendedFeatureCollection()
         {
@@ -89,11 +96,11 @@ internal class GeoPackageReader : IDisposable
         return featureCollection;
     }
 
-    public ExtendedFeature GetFeature(string table, string id, string spatialReferenceSystem)
+    public async Task<ExtendedFeature> GetFeature(string table, string id, string spatialReferenceSystem)
     {
         var originSRS = GetSRS(table);
         var geopackageWriter = new GeoPackageGeoWriter();
-        var bboxBytes = geopackageWriter.Write(GetBoundingBox(table));
+        var bboxBytes = geopackageWriter.Write(await GetBoundingBox(table));
 
 
         var commandText =
@@ -112,12 +119,12 @@ internal class GeoPackageReader : IDisposable
 
         var reader = searchCommand.ExecuteReader();
 
-        var features = GetFeatures(reader);
+        var features = await GetFeatures(reader);
 
         return features.First();
     }
 
-    private List<ExtendedFeature> GetFeatures(SqliteDataReader reader)
+    private async Task<List<ExtendedFeature>> GetFeatures(SqliteDataReader reader)
     {
         var columns = reader.FieldCount;
 
@@ -154,9 +161,9 @@ internal class GeoPackageReader : IDisposable
         return features;
     }
 
-    private Geometry GetBoundingBox(string table)
+    private async Task<Geometry> GetBoundingBox(string table)
     {
-        var srs = GetSRS(table);
+        var srs = await GetSRS(table);
 
         var bboxCommandText = 
             "SELECT AsGPB(Transform(Extent(" + 
@@ -180,7 +187,7 @@ internal class GeoPackageReader : IDisposable
         return bbox;
     }
 
-    private string GetSRS(string table)
+    private async Task<string> GetSRS(string table)
     {
         var srsCommandText = "SELECT srs_id FROM gpkg_contents WHERE table_name=($table)";
         var srsCommand = new SqliteCommand(srsCommandText, Connection);
@@ -205,7 +212,7 @@ internal class GeoPackageReader : IDisposable
         return $"{orgName}:{srsNumber}";
     }
 
-    internal IList<Collection> GetCollectionsFromMetadata()
+    internal async Task<IList<Collection>> GetCollectionsFromMetadata()
     {
 
         var commandText = "SELECT * FROM gpkg_contents";
@@ -235,15 +242,15 @@ internal class GeoPackageReader : IDisposable
 
         foreach(var collection in list)
         {
-            collection.crs.Add("EPSG:4326 but fancy");
-            collection.crs.Add("Whichever format it's originally in.");
+            collection.crs.Add("http://www.opengis.net/def/crs/OGC/1.3/CRS84");
+            //collection.crs.Add("Whichever format it's originally in.");
             collection.Extent = new()
             {
                 Spatial = new()
                 {
                     BoundingBox = new()
                     {
-                        BoundingBox.FromEnvelope(GetBoundingBox(collection.ID).EnvelopeInternal),
+                        BoundingBox.FromEnvelope((await GetBoundingBox(collection.ID)).EnvelopeInternal),
                     },
                 },
                 Temporal = null,

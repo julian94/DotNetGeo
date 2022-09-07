@@ -6,6 +6,6 @@ public interface IFeatureSource
 {
     public Collection Collection { get; init; }
 
-    public ExtendedFeatureCollection GetFeatures(SearchRequest request);
-    public ExtendedFeature GetFeature(string id);
+    public Task<ExtendedFeatureCollection> GetFeatures(SearchRequest request);
+    public Task<ExtendedFeature> GetFeature(string id);
 }

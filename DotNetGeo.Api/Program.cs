@@ -11,7 +11,7 @@ var featureSources = new List<IFeatureSource>()
     new DummySource(),
 };
 featureSources.AddRange(
-    GeoPackageProvider.GetSourcesFromDB(
+    await GeoPackageProvider.GetSourcesFromDB(
         @"C:\Users\Julian\Downloads\opmplc_gpkg_gb\data\opmplc_gb.gpkg"));
 
 var dataCentral = new DataCentral(featureSources);

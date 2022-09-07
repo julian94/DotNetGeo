@@ -37,13 +37,13 @@ public class DataCentral
         }
     }
 
-    public ExtendedFeatureCollection GetFeatures(SearchRequest request)
+    public async Task<ExtendedFeatureCollection> GetFeatures(SearchRequest request)
     {
-        return Sources[request.collectionID].GetFeatures(request);
+        return await Sources[request.collectionID].GetFeatures(request);
     }
 
-    public ExtendedFeature GetFeature(string collection, string id)
+    public async Task<ExtendedFeature> GetFeature(string collection, string id)
     {
-        return Sources[collection].GetFeature(id);
+        return await Sources[collection].GetFeature(id);
     }
 }

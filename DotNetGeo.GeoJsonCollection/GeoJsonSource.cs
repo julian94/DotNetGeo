@@ -59,7 +59,7 @@ public class GeoJsonSource : IFeatureSource
         Features = data.Features;
     }
 
-    public ExtendedFeatureCollection GetFeatures(SearchRequest request)
+    public async Task<ExtendedFeatureCollection> GetFeatures(SearchRequest request)
     {
         var features = Features.Where(f => (
             true//f.BoundingBox.Intersects(new Envelope(request.bbox.BottomLeft, request.bbox.TopRight))
@@ -75,7 +75,7 @@ public class GeoJsonSource : IFeatureSource
         return collection;
     }
 
-    public ExtendedFeature GetFeature(string id)
+    public async Task<ExtendedFeature> GetFeature(string id)
     {
         var feature = Features.Single(f => f.ID == id);
         if (feature is not null)
