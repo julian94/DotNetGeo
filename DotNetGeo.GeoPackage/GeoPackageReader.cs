@@ -48,9 +48,11 @@ internal class GeoPackageReader : IDisposable
         var geopackageWriter = new GeoPackageGeoWriter();
         var bboxBytes = geopackageWriter.Write(bbox);
 
+
+        // ST_GeomFromText('LINESTRING(minx miny, maxx miny, maxx maxy, minx maxy, minx miny)')
         var matchCountCommandText =
             $"SELECT COUNT(*) FROM {request.collectionID} " +
-            $"WHERE (geom && " +
+            "WHERE Intersects(geom, " +
             "Transform(Extent(GeomFromGPB(($boundingBox))), ($destinationSRSnumber), NULL, ($originSRS), ($destinationSRS)))";
         var matchCountCommand = new SqliteCommand(matchCountCommandText, Connection);
         matchCountCommand.Parameters.AddWithValue("$table", request.collectionID);
