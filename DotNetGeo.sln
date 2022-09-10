@@ -16,7 +16,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetGeo.GeoPackage", "Dot
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetGeo.GeoJsonSource", "DotNetGeo.GeoJsonCollection\DotNetGeo.GeoJsonSource.csproj", "{A9FF1041-F7A4-4CBA-9DB5-3F695B2DCD6F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetGeo.Mock", "DotNetGeo.DummySource\DotNetGeo.Mock.csproj", "{F2C21D64-3270-49D6-A5A2-45852C762060}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetGeo.Mock", "DotNetGeo.DummySource\DotNetGeo.Mock.csproj", "{F2C21D64-3270-49D6-A5A2-45852C762060}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetGeo.YrWeather", "DotNetGeo.YrWeather\DotNetGeo.YrWeather.csproj", "{992D21D6-E5AC-4EAC-B22F-1F3AEC7AB897}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +46,10 @@ Global
 		{F2C21D64-3270-49D6-A5A2-45852C762060}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F2C21D64-3270-49D6-A5A2-45852C762060}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F2C21D64-3270-49D6-A5A2-45852C762060}.Release|Any CPU.Build.0 = Release|Any CPU
+		{992D21D6-E5AC-4EAC-B22F-1F3AEC7AB897}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{992D21D6-E5AC-4EAC-B22F-1F3AEC7AB897}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{992D21D6-E5AC-4EAC-B22F-1F3AEC7AB897}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{992D21D6-E5AC-4EAC-B22F-1F3AEC7AB897}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
